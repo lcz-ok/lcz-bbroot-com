@@ -545,5 +545,55 @@
     });
   </script>
 
+  <!-- ================================================================ -->
+  <!-- 🎵 新增：连续按 5 次空格播放《辞·九门回忆》彩蛋（源代码未改动）   -->
+  <!-- ================================================================ -->
+  <audio id="eggAudio" preload="auto"></audio>
+  <script>
+    (function () {
+      // 👇 歌曲地址：把下载好的 cijiumen.mp3 放到本 html 同目录即可
+      //    也可以替换成你自己的托管直链（必须是可直接访问的 .mp3 地址）
+      const AUDIO_URL = 'cijiumen.mp3';
+
+      const audio = document.getElementById('eggAudio');
+      audio.src = AUDIO_URL;
+
+      const SPACE_COUNT = 5;     // 连续按几次空格触发
+      const RESET_MS = 800;      // 两次空格间隔超过此时长则重新计数
+      let count = 0;
+      let timer = null;
+
+      document.addEventListener('keydown', function (e) {
+        // 只认空格键
+        if (e.code !== 'Space' && e.key !== ' ') return;
+        // 避免在输入框/文本域里打字时误触发
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+
+        e.preventDefault(); // 阻止空格滚动页面
+
+        count++;
+        clearTimeout(timer);
+        timer = setTimeout(() => { count = 0; }, RESET_MS);
+
+        if (count >= SPACE_COUNT) {
+          count = 0;
+          clearTimeout(timer);
+          // 从头播放：无论当前是否在播，都重新播放一次
+          audio.currentTime = 0;
+          audio.play().catch(err => {
+            console.warn('播放失败，请检查 AUDIO_URL 是否正确：', err);
+          });
+        }
+      });
+
+      // 播完自然结束，不循环
+      audio.addEventListener('ended', function () {
+        audio.currentTime = 0;
+      });
+    })();
+  </script>
+  <!-- =================== 彩蛋代码结束 =================== -->
+
 </body>
 </html>
