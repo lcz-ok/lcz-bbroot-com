@@ -1,0 +1,363 @@
+# ============================================================
+# robots.txt for lcz.bbroot.com
+# 允许主流搜索引擎和合法工具，禁止所有其他爬虫（含 AI 爬虫/扫描器/采集器）
+# 注意：robots.txt 是君子协议，恶意爬虫不会遵守
+# ============================================================
+
+# ---------- Google 搜索引擎 ----------
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-News
+Allow: /
+
+User-agent: Googlebot-Video
+Allow: /
+
+User-agent: Googlebot-Mobile
+Allow: /
+
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: Google-InspectionTool
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Google-Read-Aloud
+Allow: /
+
+User-agent: Google-Site-Verification
+Allow: /
+
+User-agent: Feedfetcher-Google
+Allow: /
+
+# ---------- Microsoft / Bing 搜索引擎 ----------
+User-agent: Bingbot
+Allow: /
+
+User-agent: BingPreview
+Allow: /
+
+User-agent: adidxbot
+Allow: /
+
+User-agent: msnbot
+Allow: /
+
+User-agent: msnbot-media
+Allow: /
+
+# ---------- 百度搜索引擎 ----------
+User-agent: Baiduspider
+Allow: /
+
+User-agent: Baiduspider-image
+Allow: /
+
+User-agent: Baiduspider-news
+Allow: /
+
+User-agent: Baiduspider-video
+Allow: /
+
+User-agent: Baiduspider-mobile
+Allow: /
+
+# ---------- 360 搜索引擎 ----------
+User-agent: 360Spider
+Allow: /
+
+User-agent: HaosouSpider
+Allow: /
+
+# ---------- 搜狗搜索引擎 ----------
+User-agent: Sogou web spider
+Allow: /
+
+User-agent: Sogou inst spider
+Allow: /
+
+User-agent: Sogou blog spider
+Allow: /
+
+User-agent: Sogou news spider
+Allow: /
+
+User-agent: Sogou video spider
+Allow: /
+
+# ---------- 有道搜索引擎 ----------
+User-agent: YoudaoBot
+Allow: /
+
+# ---------- 腾讯搜搜 ----------
+User-agent: Sosospider
+Allow: /
+
+# ---------- Yandex（俄罗斯） ----------
+User-agent: YandexBot
+Allow: /
+
+User-agent: YandexAccessibilityBot
+Allow: /
+
+User-agent: YandexMobileBot
+Allow: /
+
+User-agent: YandexImages
+Allow: /
+
+User-agent: YandexVideo
+Allow: /
+
+User-agent: YandexNews
+Allow: /
+
+User-agent: YandexBlogs
+Allow: /
+
+User-agent: YandexWebmaster
+Allow: /
+
+User-agent: YandexDirect
+Allow: /
+
+User-agent: YandexMetrika
+Allow: /
+
+# ---------- DuckDuckGo ----------
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: DuckDuckBot-Favicons
+Allow: /
+
+User-agent: DuckDuckBot-Html
+Allow: /
+
+# ---------- Apple / Siri ----------
+User-agent: Applebot
+Allow: /
+
+User-agent: Siribot
+Allow: /
+
+# ---------- 字节跳动 / 抖音搜索 ----------
+User-agent: Bytespider
+Allow: /
+
+# ---------- 社交媒体预览爬虫（分享链接时显示卡片预览） ----------
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Pinterestbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: Discordbot
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: SkypeUriPreview
+Allow: /
+
+User-agent: MetaInspector
+Allow: /
+
+User-agent: embedly
+Allow: /
+
+User-agent: Quora Link Preview
+Allow: /
+
+User-agent: Redditbot
+Allow: /
+
+User-agent: Tumblrbot
+Allow: /
+
+User-agent: DoubanBot
+Allow: /
+
+# ---------- 互联网存档 ----------
+User-agent: ia_archiver
+Allow: /
+
+User-agent: Archive.org_bot
+Allow: /
+
+# ---------- W3C 验证工具 ----------
+User-agent: W3C_Validator
+Allow: /
+
+User-agent: W3C-checklink
+Allow: /
+
+User-agent: W3C-mobileOK
+Allow: /
+
+User-agent: W3C_I18n-Checker
+Allow: /
+
+User-agent: W3C_Unicorn
+Allow: /
+
+User-agent: W3C-CSS-Validator
+Allow: /
+
+User-agent: W3C-html-validator
+Allow: /
+
+# ---------- RSS / Feed 阅读器 ----------
+User-agent: FeedParser
+Allow: /
+
+User-agent: RSSing
+Allow: /
+
+User-agent: Bloglines
+Allow: /
+
+User-agent: NewsGator
+Allow: /
+
+User-agent: Rojo
+Allow: /
+
+User-agent: BlogSearch
+Allow: /
+
+User-agent: Technorati
+Allow: /
+
+User-agent: PubSub
+Allow: /
+
+User-agent: Tailrank
+Allow: /
+
+User-agent: Wikio
+Allow: /
+
+# ---------- 播客 / 音乐应用 ----------
+User-agent: iTunes
+Allow: /
+
+User-agent: Stitcher
+Allow: /
+
+User-agent: Pocket Casts
+Allow: /
+
+User-agent: Overcast
+Allow: /
+
+User-agent: Castro
+Allow: /
+
+User-agent: Downcast
+Allow: /
+
+User-agent: Instacast
+Allow: /
+
+User-agent: Swell
+Allow: /
+
+User-agent: Spreaker
+Allow: /
+
+User-agent: SoundCloud
+Allow: /
+
+User-agent: Audioboom
+Allow: /
+
+User-agent: Podbean
+Allow: /
+
+User-agent: Libsyn
+Allow: /
+
+User-agent: Blubrry
+Allow: /
+
+User-agent: RawVoice
+Allow: /
+
+User-agent: Last.fm
+Allow: /
+
+User-agent: Pandora
+Allow: /
+
+User-agent: Spotify
+Allow: /
+
+# ---------- 稍后阅读 / 笔记工具 ----------
+User-agent: Readability
+Allow: /
+
+User-agent: Instapaper
+Allow: /
+
+User-agent: Pocket
+Allow: /
+
+User-agent: Evernote
+Allow: /
+
+User-agent: OneNote
+Allow: /
+
+User-agent: Notion
+Allow: /
+
+User-agent: Obsidian
+Allow: /
+
+User-agent: Tynt
+Allow: /
+
+# ---------- WordPress 等 CMS 回环 ----------
+User-agent: WordPress
+Allow: /
+
+# ============================================================
+# 禁止所有其他未列出的爬虫
+# 包括但不限于：AI 训练爬虫、内容采集器、漏洞扫描器、
+# 价格监控、数据挖掘、镜像站点、SEO 工具等
+# ============================================================
+User-agent: *
+Disallow: /
+
+# ============================================================
+# 网站地图
+# ============================================================
+Sitemap: https://lcz.bbroot.com/sitemap.xml
