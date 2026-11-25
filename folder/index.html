@@ -166,7 +166,7 @@
       </div>
     </div>
 
-    <p class="hint" id="hint">所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。支持多选批量上传（自动合并为一次提交，速度更快），单个文件上限 100MB。</p>
+    <p class="hint" id="hint">所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。支持多选批量上传（自动合并为一次提交，速度更快），单个文件上限 40MB。</p>
 
     <div id="list" class="list"></div>
     <div id="empty" class="empty" hidden>这个文件夹还是空的</div>
@@ -586,8 +586,8 @@
       adminTools.hidden = !unlocked;
       adminBtn.textContent = unlocked ? '管理设置' : '更改';
       $('hint').innerHTML = unlocked
-        ? '管理模式已开启：可上传、删除、重命名、覆盖文件。多选文件会合并为一次提交，单文件上限 100MB。'
-        : '所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。支持多选批量上传，单个文件上限 100MB。';
+        ? '管理模式已开启：可上传、删除、重命名、覆盖文件。多选文件会合并为一次提交，单文件上限 40MB。'
+        : '所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。支持多选批量上传，单个文件上限 40MB。';
       render();
     }
 
@@ -628,7 +628,7 @@
       });
     }
 
-    const MAX_FILE_SIZE = 100 * 1024 * 1024;  // GitHub 单文件硬上限
+    const MAX_FILE_SIZE = 40 * 1024 * 1024;  // 实测 GitHub 接口在 42MB 左右开始拒绝，40MB 留出余量
     const CONCURRENCY = 4;                    // 并行上传数
 
     async function uploadFiles(files, keepDir) {
@@ -646,7 +646,7 @@
       });
       const tooBig = targets.find(t => t.file.size > MAX_FILE_SIZE);
       if (tooBig) {
-        setStatus(`「${tooBig.file.name}」为 ${fmtSize(tooBig.file.size)}，超过 GitHub 单个文件 100MB 上限，无法上传。`, 'err');
+        setStatus(`「${tooBig.file.name}」为 ${fmtSize(tooBig.file.size)}，超过 GitHub 接口单文件 ${fmtSize(MAX_FILE_SIZE)} 上限，无法上传。`, 'err');
         return;
       }
       const total = targets.reduce((s, t) => s + t.file.size, 0);
@@ -867,7 +867,7 @@
       const target = replaceTarget;
       replaceTarget = null;
       if (f.size > MAX_FILE_SIZE) {
-        setStatus(`该文件 ${fmtSize(f.size)}，超过 GitHub 单个文件 100MB 上限。`, 'err');
+        setStatus(`该文件 ${fmtSize(f.size)}，超过 GitHub 接口单文件 ${fmtSize(MAX_FILE_SIZE)} 上限。`, 'err');
         return;
       }
       if (!confirm(`确定用「${f.name}」覆盖「${target.name}」的内容吗？`)) return;
