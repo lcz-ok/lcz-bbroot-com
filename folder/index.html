@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文件中心 · 刘宸至</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="../favicon.ico" type="image/x-icon" />
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #818cf8;
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --danger: #f43f5e;
+      --success: #22c55e;
+      --radius: 14px;
+      --transition: 0.25s ease;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      background-image: radial-gradient(ellipse at 50% -10%, rgba(79,70,229,0.18) 0%, transparent 55%);
+    }
+    a { color: var(--accent); text-decoration: none; transition: var(--transition); }
+    a:hover { color: var(--primary-light); }
+    button { font-family: inherit; }
+
+    /* ===== 顶栏 ===== */
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; gap: 1rem;
+      height: 64px; padding: 0 1.5rem;
+      background: rgba(15,23,42,0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .brand { font-weight: 700; color: #fff; white-space: nowrap; }
+    .page-title { flex: 1; color: var(--text-muted); font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-change {
+      border: none; cursor: pointer; flex-shrink: 0;
+      padding: 0.5rem 1.2rem; border-radius: 50px;
+      font-size: 0.9rem; font-weight: 600; color: #fff;
+      background: linear-gradient(135deg, #f59e0b, #f43f5e);
+      transition: var(--transition);
+    }
+    .btn-change:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(244,63,94,0.35); }
+
+    /* ===== 布局 ===== */
+    .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1.2rem 5rem; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
+    .crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.95rem; flex: 1; min-width: 200px; }
+    .crumb-link { background: none; border: none; color: var(--text); cursor: pointer; font-size: inherit; padding: 2px 4px; border-radius: 6px; transition: var(--transition); }
+    .crumb-link:hover { background: rgba(79,70,229,0.2); color: #fff; }
+    .crumb-sep { color: var(--text-muted); }
+    .admin-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.45rem 0.95rem; border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(79,70,229,0.18); color: var(--text);
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn.ghost { background: transparent; }
+    .btn.ghost:hover { background: rgba(255,255,255,0.08); border-color: var(--text-muted); color: #fff; }
+    .btn.danger:hover { background: var(--danger); border-color: var(--danger); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ===== 列表 ===== */
+    .hint { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+    .hint b { color: var(--accent); font-weight: 600; }
+    .list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .row {
+      display: grid; grid-template-columns: minmax(0, 1fr) 90px auto;
+      align-items: center; gap: 0.8rem;
+      padding: 0.8rem 1rem; border-radius: var(--radius);
+      background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05);
+      transition: var(--transition);
+    }
+    .row:hover { border-color: rgba(79,70,229,0.5); }
+    .name { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .name .icon { font-size: 1.25rem; flex-shrink: 0; }
+    .name .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .name.clickable { cursor: pointer; }
+    .name.clickable:hover .nm { color: var(--accent); }
+    .size { color: var(--text-muted); font-size: 0.82rem; text-align: right; white-space: nowrap; }
+    .row-actions { display: flex; gap: 0.4rem; justify-content: flex-end; flex-wrap: wrap; }
+    .mini {
+      border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+      color: var(--text-muted); border-radius: 8px; padding: 0.25rem 0.6rem;
+      font-size: 0.78rem; cursor: pointer; transition: var(--transition);
+    }
+    .mini:hover { color: #fff; border-color: var(--accent); }
+    .mini.danger:hover { color: #fff; border-color: var(--danger); background: rgba(244,63,94,0.2); }
+    .empty { text-align: center; color: var(--text-muted); padding: 3.5rem 1rem; border: 1px dashed rgba(255,255,255,0.12); border-radius: var(--radius); }
+    .status { margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); word-break: break-all; }
+    .status.ok { color: var(--success); }
+    .status.err { color: var(--danger); }
+
+    /* ===== 弹窗 ===== */
+    .mask {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.2rem; background: rgba(2,6,23,0.7); backdrop-filter: blur(4px);
+    }
+    .mask[hidden] { display: none; }
+    .modal {
+      width: 100%; max-width: 400px;
+      background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius); padding: 1.6rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    }
+    .modal h3 { font-size: 1.15rem; margin-bottom: 0.4rem; }
+    .modal .muted { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+    .modal .in {
+      width: 100%; padding: 0.75rem 1rem; border-radius: 10px;
+      background: #0f172a; border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text); font-size: 0.95rem; outline: none; transition: var(--transition);
+    }
+    .modal .in:focus { border-color: var(--primary); }
+    .modal .err { color: var(--danger); font-size: 0.82rem; margin-top: 0.6rem; }
+    .modal .link { color: var(--text-muted); font-size: 0.78rem; background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; }
+    .mact { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.2rem; }
+    .mact .btn { padding: 0.55rem 1.2rem; font-size: 0.88rem; background: var(--primary); color: #fff; border-color: var(--primary); }
+    .mact .btn.ghost { background: transparent; color: var(--text-muted); border-color: rgba(255,255,255,0.12); }
+    .mact .btn.ghost:hover { color: #fff; border-color: var(--text-muted); }
+
+    @media (max-width: 640px) {
+      .row { grid-template-columns: minmax(0,1fr) auto; }
+      .size { display: none; }
+      .topbar { padding: 0 1rem; }
+      .page-title { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <a class="brand" href="../index.html">🚀 刘宸至</a>
+    <div class="page-title">文件中心</div>
+    <button id="adminBtn" class="btn-change">更改</button>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <div id="crumb" class="crumb"></div>
+      <div id="adminTools" class="admin-tools" hidden>
+        <button class="btn" id="uploadBtn">⬆ 上传文件</button>
+        <button class="btn" id="uploadDirBtn">📁 上传文件夹</button>
+        <button class="btn" id="mkdirBtn">＋ 新建文件夹</button>
+        <button class="btn ghost" id="logoutBtn">退出管理</button>
+      </div>
+    </div>
+
+    <p class="hint" id="hint">所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。</p>
+
+    <div id="list" class="list"></div>
+    <div id="empty" class="empty" hidden>这个文件夹还是空的</div>
+    <div id="status" class="status" hidden></div>
+  </main>
+
+  <input type="file" id="fileInput" multiple hidden />
+  <input type="file" id="dirInput" webkitdirectory hidden />
+  <input type="file" id="replaceInput" hidden />
+
+  <div class="mask" id="mask" hidden>
+    <div class="modal" id="modalBox"></div>
+  </div>
+
+  <script>
+    /* ============ 配置 ============ */
+    const OWNER = 'lcz-ok';
+    const REPO = 'lcz-bbroot-com';
+    const BRANCH = 'main';
+    const ROOT = 'folder';                 // 仓库根目录下存放文件的文件夹
+    const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+    const PWD_HASH = '75e96a589935a1a6e28cb3e4d8d1b27ef987c2ff0f55221575e5802686126672';
+    const TOKEN_KEY = 'lcz_drive_token';
+    const UNLOCK_KEY = 'lcz_drive_admin';
+    const BASE = new URL('.', location.href).href;
+
+    /* ============ 状态 ============ */
+    let path = [];            // 相对 ROOT 的路径数组
+    let items = [];
+    let unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1';
+    let replaceTarget = null;
+
+    const $ = id => document.getElementById(id);
+    const listEl = $('list'), emptyEl = $('empty'), statusEl = $('status'), crumbEl = $('crumb');
+    const adminTools = $('adminTools'), adminBtn = $('adminBtn'), mask = $('mask'), modalBox = $('modalBox');
+    const fileInput = $('fileInput'), dirInput = $('dirInput'), replaceInput = $('replaceInput');
+
+    /* ============ 工具函数 ============ */
+    function encPath(p) {
+      return p.split('/').map(encodeURIComponent).join('/');
+    }
+    function fileUrl(parts) {
+      return BASE + parts.map(encodeURIComponent).join('/');
+    }
+    function fileUrlFromRepo(repoPath) {
+      const rel = repoPath.startsWith(ROOT + '/') ? repoPath.slice(ROOT.length + 1) : repoPath;
+      return BASE + rel.split('/').map(encodeURIComponent).join('/');
+    }
+    function fmtSize(n) {
+      if (typeof n !== 'number') return '—';
+      const u = ['B', 'KB', 'MB', 'GB'];
+      let i = 0, x = n;
+      while (x >= 1024 && i < u.length - 1) { x /= 1024; i++; }
+      return (i === 0 ? x : x.toFixed(1)) + ' ' + u[i];
+    }
+    function setStatus(msg, type) {
+      statusEl.hidden = !msg;
+      statusEl.textContent = msg || '';
+      statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+    async function sha256(s) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    function bufToB64(buf) {
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      const CHUNK = 0x8000;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+      }
+      return btoa(bin);
+    }
+    function fileToB64(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(bufToB64(r.result));
+        r.onerror = () => reject(new Error('读取文件失败：' + file.name));
+        r.readAsArrayBuffer(file);
+      });
+    }
+    const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
+
+    /* ============ GitHub API ============ */
+    async function gh(rel, { method = 'GET', body } = {}) {
+      const headers = { 'Accept': 'application/vnd.github+json' };
+      const t = getToken();
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      const res = await fetch(`${API}/contents/${encPath(rel)}`, { method, headers, body });
+      const text = await res.text();
+      let data = null;
+      if (text) { try { data = JSON.parse(text); } catch (e) { data = text; } }
+      if (!res.ok) {
+        if (res.status === 404 && method === 'GET') return null;
+        const err = new Error((data && data.message) || ('HTTP ' + res.status));
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    }
+
+    /* ============ 目录渲染 ============ */
+    async function loadDir() {
+      setStatus('正在加载…');
+      const rel = [ROOT, ...path].join('/');
+      try {
+        const data = await gh(rel);
+        let arr = Array.isArray(data) ? data : [];
+        arr = arr.filter(it => {
+          if (it.name.startsWith('.')) return false;                  // 隐藏 .gitkeep 等
+          if (path.length === 0 && it.name === 'index.html') return false; // 隐藏页面自身
+          return true;
+        });
+        arr.sort((a, b) => a.type === b.type
+          ? a.name.localeCompare(b.name, 'zh')
+          : (a.type === 'dir' ? -1 : 1));
+        items = arr;
+        setStatus('');
+      } catch (e) {
+        items = [];
+        handleErr(e);
+      }
+      render();
+    }
+
+    function render() {
+      crumbEl.innerHTML = '';
+      const rootBtn = document.createElement('button');
+      rootBtn.className = 'crumb-link';
+      rootBtn.textContent = '全部文件';
+      rootBtn.onclick = () => { path = []; loadDir(); };
+      crumbEl.appendChild(rootBtn);
+      path.forEach((seg, i) => {
+        const sep = document.createElement('span');
+        sep.className = 'crumb-sep';
+        sep.textContent = '/';
+        crumbEl.appendChild(sep);
+        const b = document.createElement('button');
+        b.className = 'crumb-link';
+        b.textContent = seg;
+        b.onclick = () => { path = path.slice(0, i + 1); loadDir(); };
+        crumbEl.appendChild(b);
+      });
+
+      listEl.innerHTML = '';
+      emptyEl.hidden = items.length > 0;
+
+      items.forEach(it => {
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        const nameCell = document.createElement('div');
+        nameCell.className = 'name';
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = it.type === 'dir' ? '📁' : '📄';
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = it.name;
+        nameCell.append(icon, nm);
+
+        const sizeCell = document.createElement('div');
+        sizeCell.className = 'size';
+        sizeCell.textContent = it.type === 'dir' ? '文件夹' : fmtSize(it.size);
+
+        const actions = document.createElement('div');
+        actions.className = 'row-actions';
+
+        if (it.type === 'dir') {
+          nameCell.classList.add('clickable');
+          nameCell.onclick = () => { path.push(it.name); loadDir(); };
+        } else {
+          const a = document.createElement('a');
+          a.className = 'mini';
+          a.href = fileUrl([...path, it.name]);
+          a.setAttribute('download', it.name);
+          a.textContent = '下载';
+          actions.appendChild(a);
+        }
+
+        if (unlocked) {
+          if (it.type === 'file') {
+            actions.appendChild(miniBtn('覆盖', () => overwriteItem(it)));
+          }
+          actions.appendChild(miniBtn('重命名', () => renameItem(it)));
+          actions.appendChild(miniBtn('删除', () => removeItem(it), 'danger'));
+        }
+
+        row.append(nameCell, sizeCell, actions);
+        listEl.appendChild(row);
+      });
+    }
+
+    function miniBtn(text, onClick, extra) {
+      const b = document.createElement('button');
+      b.className = 'mini' + (extra ? ' ' + extra : '');
+      b.textContent = text;
+      b.onclick = onClick;
+      return b;
+    }
+
+    function handleErr(e) {
+      console.error(e);
+      if (e.status === 401) {
+        setStatus('授权失败：GitHub 令牌无效或已过期，请点击右上角「管理设置」重新填写。', 'err');
+      } else if (e.status === 403) {
+        setStatus('访问受限：' + (e.message || 'GitHub 请求频率限制') + '，请稍后再试。', 'err');
+      } else {
+        setStatus('操作失败：' + (e.message || e), 'err');
+      }
+    }
+
+    /* ============ 管理弹窗 ============ */
+    function openMask() { mask.hidden = false; }
+    function closeMask() { mask.hidden = true; modalBox.innerHTML = ''; }
+    mask.addEventListener('click', e => { if (e.target === mask) closeMask(); });
+
+    function openLock() {
+      modalBox.innerHTML = `
+        <h3>管理员验证</h3>
+        <p class="muted">输入管理密码后可上传、删除、修改文件</p>
+        <input class="in" id="pwd" type="password" placeholder="请输入管理密码" autocomplete="off" />
+        <p class="err" id="err" hidden></p>
+        <div class="mact">
+          <button class="btn ghost" id="cancelBtn">取消</button>
+          <button class="btn" id="okBtn">确定</button>
+        </div>`;
+      openMask();
+      const inp = modalBox.querySelector('#pwd');
+      const err = modalBox.querySelector('#err');
+      const ok = modalBox.querySelector('#okBtn');
+      inp.focus();
+      modalBox.querySelector('#cancelBtn').onclick = closeMask;
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok.click(); });
+      ok.onclick = async () => {
+        ok.disabled = true;
+        const pass = await sha256(inp.value);
+        ok.disabled = false;
+        if (pass !== PWD_HASH) {
+          err.hidden = false;
+          err.textContent = '密码错误，请重试';
+          inp.value = '';
+          inp.focus();
+          return;
+        }
+        sessionStorage.setItem(UNLOCK_KEY, '1');
+        closeMask();
+        updateUI();
+        if (!getToken()) openToken();
+      };
+    }
+
+    function openToken() {
+      const hasToken = !!getToken();
+      modalBox.innerHTML = `
+        <h3>GitHub 写入令牌</h3>
+        <p class="muted">上传/删除/修改需要仓库写入权限。令牌只保存在你当前浏览器的本地存储中，不会写入网站代码。</p>
+        <input class="in" id="tk" type="password" placeholder="github_pat_..." autocomplete="off" />
+        <p class="err" id="err" hidden></p>
+        ${hasToken ? '<p style="margin-top:.7rem"><button class="link" id="clearBtn">清除已保存的令牌</button></p>' : ''}
+        <div class="mact">
+          <button class="btn ghost" id="cancelBtn">稍后</button>
+          <button class="btn" id="okBtn">保存</button>
+        </div>`;
+      openMask();
+      const inp = modalBox.querySelector('#tk');
+      const err = modalBox.querySelector('#err');
+      const ok = modalBox.querySelector('#okBtn');
+      inp.focus();
+      modalBox.querySelector('#cancelBtn').onclick = closeMask;
+      const clearBtn = modalBox.querySelector('#clearBtn');
+      if (clearBtn) clearBtn.onclick = () => {
+        localStorage.removeItem(TOKEN_KEY);
+        closeMask();
+        loadDir();
+      };
+      ok.onclick = async () => {
+        const v = inp.value.trim();
+        if (!v) {
+          err.hidden = false;
+          err.textContent = '请填写令牌';
+          return;
+        }
+        ok.disabled = true;
+        ok.textContent = '验证中…';
+        try {
+          const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
+            headers: { 'Authorization': 'Bearer ' + v, 'Accept': 'application/vnd.github+json' }
+          });
+          if (!r.ok) throw new Error('令牌无效或无权限（HTTP ' + r.status + '）');
+          localStorage.setItem(TOKEN_KEY, v);
+          closeMask();
+          loadDir();
+        } catch (e) {
+          ok.disabled = false;
+          ok.textContent = '保存';
+          err.hidden = false;
+          err.textContent = e.message;
+        }
+      };
+    }
+
+    function updateUI() {
+      unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1';
+      adminTools.hidden = !unlocked;
+      adminBtn.textContent = unlocked ? '管理设置' : '更改';
+      $('hint').innerHTML = unlocked
+        ? '管理模式已开启：可上传、删除、重命名、覆盖文件。'
+        : '所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。';
+      render();
+    }
+
+    adminBtn.onclick = () => { unlocked ? openToken() : openLock(); };
+    $('logoutBtn').onclick = () => {
+      sessionStorage.removeItem(UNLOCK_KEY);
+      updateUI();
+    };
+
+    /* ============ 写操作 ============ */
+    function requireToken() {
+      if (getToken()) return true;
+      openToken();
+      return false;
+    }
+
+    async function putContent(rel, content, sha, overwrite) {
+      const body = { message: `更新 ${rel}`, content, branch: BRANCH };
+      if (sha) body.sha = sha;
+      try {
+        return await gh(rel, { method: 'PUT', body: JSON.stringify(body) });
+      } catch (e) {
+        if (e.status === 422 && overwrite) {
+          const cur = await gh(rel);
+          if (cur && cur.sha) {
+            body.sha = cur.sha;
+            return await gh(rel, { method: 'PUT', body: JSON.stringify(body) });
+          }
+        }
+        throw e;
+      }
+    }
+
+    async function deleteContent(repoPath, sha) {
+      return gh(repoPath, {
+        method: 'DELETE',
+        body: JSON.stringify({ message: `删除 ${repoPath}`, sha, branch: BRANCH })
+      });
+    }
+
+    async function uploadFiles(files, keepDir) {
+      if (!files.length) return;
+      let ok = 0;
+      const fails = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const parts = keepDir
+          ? [...path, ...f.webkitRelativePath.split('/').filter(Boolean)]
+          : [...path, f.name];
+        setStatus(`正在上传 ${i + 1}/${files.length}：${f.name}`);
+        try {
+          await putContent([ROOT, ...parts].join('/'), await fileToB64(f), null, true);
+          ok++;
+        } catch (e) {
+          fails.push(f.name + '（' + e.message + '）');
+        }
+      }
+      setStatus(`上传完成：成功 ${ok} 个${fails.length ? `，失败 ${fails.length} 个：${fails[0]}` : ''}`, fails.length ? 'err' : 'ok');
+      loadDir();
+    }
+
+    $('uploadBtn').onclick = () => { if (requireToken()) fileInput.click(); };
+    $('uploadDirBtn').onclick = () => { if (requireToken()) dirInput.click(); };
+
+    fileInput.onchange = e => {
+      const files = [...e.target.files];
+      e.target.value = '';
+      uploadFiles(files, false);
+    };
+    dirInput.onchange = e => {
+      const files = [...e.target.files];
+      e.target.value = '';
+      uploadFiles(files, true);
+    };
+
+    $('mkdirBtn').onclick = async () => {
+      if (!requireToken()) return;
+      const name = prompt('请输入新文件夹名称');
+      if (!name) return;
+      if (/[\/\\]/.test(name)) { alert('名称不能包含斜杠 / 或 \\'); return; }
+      try {
+        setStatus('正在创建文件夹…');
+        await putContent([ROOT, ...path, name, '.gitkeep'].join('/'), '');
+        setStatus('文件夹已创建', 'ok');
+        loadDir();
+      } catch (e) { handleErr(e); }
+    };
+
+    async function removeItem(it) {
+      if (!requireToken()) return;
+      const label = it.type === 'dir' ? `文件夹「${it.name}」及其全部内容` : `文件「${it.name}」`;
+      if (!confirm(`确定要删除${label}吗？此操作不可恢复。`)) return;
+      try {
+        if (it.type === 'dir') {
+          const files = await collectFiles(it.path);
+          if (!files.length) {
+            setStatus('该文件夹为空，无法直接删除，请先在 GitHub 上删除。', 'err');
+            return;
+          }
+          for (let i = 0; i < files.length; i++) {
+            setStatus(`正在删除 ${i + 1}/${files.length}…`);
+            await deleteContent(files[i].path, files[i].sha);
+          }
+        } else {
+          setStatus('正在删除…');
+          await deleteContent(it.path, it.sha);
+        }
+        setStatus('已删除', 'ok');
+        loadDir();
+      } catch (e) { handleErr(e); }
+    }
+
+    async function collectFiles(repoDir) {
+      const data = await gh(repoDir);
+      let out = [];
+      for (const it of (Array.isArray(data) ? data : [])) {
+        if (it.type === 'dir') out = out.concat(await collectFiles(it.path));
+        else out.push({ path: it.path, sha: it.sha });
+      }
+      return out;
+    }
+
+    async function renameItem(it) {
+      if (!requireToken()) return;
+      const newName = prompt('请输入新名称', it.name);
+      if (!newName || newName === it.name) return;
+      if (/[\/\\]/.test(newName)) { alert('名称不能包含斜杠 / 或 \\'); return; }
+      const newRel = [ROOT, ...path, newName].join('/');
+      try {
+        if (it.type === 'dir') {
+          const files = await collectFiles(it.path);
+          for (let i = 0; i < files.length; i++) {
+            setStatus(`正在重命名 ${i + 1}/${files.length}…`);
+            const suffix = files[i].path.slice(it.path.length);
+            const bytes = await (await fetch(fileUrlFromRepo(files[i].path))).arrayBuffer();
+            await putContent(newRel + suffix, bufToB64(bytes), null, true);
+            await deleteContent(files[i].path, files[i].sha);
+          }
+        } else {
+          setStatus('正在重命名…');
+          const bytes = await (await fetch(fileUrlFromRepo(it.path))).arrayBuffer();
+          await putContent(newRel, bufToB64(bytes), null, true);
+          await deleteContent(it.path, it.sha);
+        }
+        setStatus('已重命名', 'ok');
+        loadDir();
+      } catch (e) { handleErr(e); }
+    }
+
+    function overwriteItem(it) {
+      if (!requireToken()) return;
+      replaceTarget = it;
+      replaceInput.click();
+    }
+
+    replaceInput.onchange = async e => {
+      const f = e.target.files[0];
+      e.target.value = '';
+      if (!f || !replaceTarget) return;
+      const target = replaceTarget;
+      replaceTarget = null;
+      if (!confirm(`确定用「${f.name}」覆盖「${target.name}」的内容吗？`)) return;
+      try {
+        setStatus('正在覆盖…');
+        await putContent(target.path, await fileToB64(f), target.sha);
+        setStatus('已覆盖', 'ok');
+        loadDir();
+      } catch (e) { handleErr(e); }
+    };
+
+    /* ============ 初始化 ============ */
+    updateUI();
+    loadDir();
+  </script>
+</body>
+</html>
