@@ -110,6 +110,11 @@
     .bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
     .bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; transition: width 0.2s ease; }
     .progress span { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+    .bigfiles { margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,0.07); }
+    .big-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+    .big-head h3 { font-size: 1.05rem; font-weight: 700; }
+    .big-note { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem; }
+    .tag-pill { font-size: 0.7rem; color: var(--accent); border: 1px solid rgba(56,189,248,0.3); border-radius: 50px; padding: 0.05rem 0.5rem; margin-left: 0.5rem; }
 
     /* ===== 弹窗 ===== */
     .mask {
@@ -166,7 +171,7 @@
       </div>
     </div>
 
-    <p class="hint" id="hint">所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。支持多选批量上传（自动合并为一次提交，速度更快），单个文件上限 40MB。</p>
+    <p class="hint" id="hint">所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。小文件（≤40MB）存在站点内，大文件（最大 2GB）自动走「发布区」后台上传。</p>
 
     <div id="list" class="list"></div>
     <div id="empty" class="empty" hidden>这个文件夹还是空的</div>
@@ -175,6 +180,15 @@
       <span id="ptext"></span>
     </div>
     <div id="status" class="status" hidden></div>
+
+    <section class="bigfiles">
+      <div class="big-head">
+        <h3>📦 大文件（发布区）</h3>
+        <button class="mini" id="refreshBig">刷新</button>
+      </div>
+      <p class="big-note">超过 40MB 的文件会在这里：上传后由 GitHub 后台合并发布，单文件最大 2GB。</p>
+      <div id="bigList" class="list"></div>
+    </section>
   </main>
 
   <input type="file" id="fileInput" multiple hidden />
@@ -202,11 +216,13 @@
     let items = [];
     let unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1';
     let replaceTarget = null;
+    let bigAssets = [];
 
     const $ = id => document.getElementById(id);
     const listEl = $('list'), emptyEl = $('empty'), statusEl = $('status'), crumbEl = $('crumb');
     const adminTools = $('adminTools'), adminBtn = $('adminBtn'), mask = $('mask'), modalBox = $('modalBox');
     const fileInput = $('fileInput'), dirInput = $('dirInput'), replaceInput = $('replaceInput');
+    const bigListEl = $('bigList');
 
     /* ============ 工具函数 ============ */
     function encPath(p) {
@@ -586,9 +602,10 @@
       adminTools.hidden = !unlocked;
       adminBtn.textContent = unlocked ? '管理设置' : '更改';
       $('hint').innerHTML = unlocked
-        ? '管理模式已开启：可上传、删除、重命名、覆盖文件。多选文件会合并为一次提交，单文件上限 40MB。'
-        : '所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。支持多选批量上传，单个文件上限 40MB。';
+        ? '管理模式已开启：可上传、删除、重命名、覆盖文件。≤40MB 存在站点内，>40MB 自动走发布区（最大 2GB）。'
+        : '所有文件均可直接下载。上传、删除、修改需要点击右上角 <b>更改</b> 并输入管理密码。';
       render();
+      renderBig(bigAssets);
     }
 
     adminBtn.onclick = () => { unlocked ? openToken() : openLock(); };
@@ -628,8 +645,10 @@
       });
     }
 
-    const MAX_FILE_SIZE = 40 * 1024 * 1024;  // 实测 GitHub 接口在 42MB 左右开始拒绝，40MB 留出余量
-    const CONCURRENCY = 4;                    // 并行上传数
+    const MAX_FILE_SIZE = 40 * 1024 * 1024;        // 小文件走仓库通道的上限（实测）
+    const LARGE_MAX_SIZE = 2 * 1024 * 1024 * 1024; // 大文件走 Release 通道，GitHub 单文件上限 2GB
+    const CHUNK_SIZE = 32 * 1024 * 1024;           // 大文件分片大小
+    const CONCURRENCY = 4;                         // 并行上传数
 
     async function uploadFiles(files, keepDir) {
       if (!files.length) return;
@@ -644,21 +663,30 @@
             : [...path, f.name]
         };
       });
-      const tooBig = targets.find(t => t.file.size > MAX_FILE_SIZE);
-      if (tooBig) {
-        setStatus(`「${tooBig.file.name}」为 ${fmtSize(tooBig.file.size)}，超过 GitHub 接口单文件 ${fmtSize(MAX_FILE_SIZE)} 上限，无法上传。`, 'err');
+
+      const large = targets.filter(t => t.file.size > MAX_FILE_SIZE);
+      const small = targets.filter(t => t.file.size <= MAX_FILE_SIZE);
+      const huge = targets.find(t => t.file.size > LARGE_MAX_SIZE);
+      if (huge) {
+        setStatus(`「${huge.file.name}」为 ${fmtSize(huge.file.size)}，超过 2GB 上限，无法上传。`, 'err');
         return;
       }
-      const total = targets.reduce((s, t) => s + t.file.size, 0);
 
       try {
-        if (targets.length === 1) {
-          await uploadSingle(targets[0]);
-        } else {
-          await uploadBatch(targets, total);
+        for (const t of large) {
+          await uploadLarge(t);
         }
-        await loadDir();
-        setStatus(`上传成功：${targets.length} 个文件，共 ${fmtSize(total)}。GitHub Pages 构建约需 1 分钟，稍后即可下载。`, 'ok');
+        if (small.length) {
+          const total = small.reduce((s, t) => s + t.file.size, 0);
+          if (small.length === 1) await uploadSingle(small[0]);
+          else await uploadBatch(small, total);
+          await loadDir();
+        }
+        if (large.length) {
+          await loadBigFiles();
+        } else {
+          setStatus(`上传成功：${small.length} 个文件。GitHub Pages 构建约需 1 分钟，稍后即可下载。`, 'ok');
+        }
       } catch (e) {
         setStatus('上传失败：' + (e.message || e), 'err');
         console.error(e);
@@ -666,6 +694,144 @@
         setProgress(null);
       }
     }
+
+    /* ============ 大文件：分片上传 → Actions 合并 → Release ============ */
+    async function uploadLarge(target) {
+      const file = target.file;
+      const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
+      const shas = [];
+      let doneBytes = 0;
+
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const blob = file.slice(start, Math.min(start + CHUNK_SIZE, file.size));
+        setStatus(`大文件：${file.name}（${fmtSize(file.size)}）`);
+        const b64 = await fileToB64(blob);
+        const res = await blobXHR(b64, (loaded, total) => {
+          const frac = total ? loaded / total : 0;
+          const uploaded = doneBytes + blob.size * frac;
+          setProgress((uploaded / Math.max(file.size, 1)) * 100,
+            `分片 ${i + 1}/${totalChunks} · ${fmtSize(uploaded)} / ${fmtSize(file.size)}`);
+        });
+        shas.push(res.sha);
+        doneBytes += blob.size;
+      }
+
+      setProgress(100, '分片上传完成，正在提交后台合并…');
+      const tag = await nextTag();
+      await api('POST', `/actions/workflows/big-upload.yml/dispatches`, {
+        ref: BRANCH,
+        inputs: { name: file.name, shas: shas.join(','), tag }
+      }, 0);
+      setStatus(`「${file.name}」已上传完毕，GitHub 正在后台合并并发布（标签 ${tag}），通常 1～5 分钟，完成后会自动出现在下方。`, 'ok');
+      watchRelease(tag, file.name);
+    }
+
+    // 版本号按 0.0001、0.0002… 递增
+    async function nextTag() {
+      const rels = await api('GET', '/releases?per_page=100');
+      let max = 0;
+      (Array.isArray(rels) ? rels : []).forEach(r => {
+        const m = /^0\.(\d{1,9})$/.exec(r.tag_name || '');
+        if (m) max = Math.max(max, parseInt(m[1], 10));
+      });
+      return '0.' + String(max + 1).padStart(4, '0');
+    }
+
+    async function watchRelease(tag, name) {
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 15000));
+        try {
+          const rel = await api('GET', `/releases/tags/${encodeURIComponent(tag)}`);
+          const asset = (rel && rel.assets || []).find(a => a.name === name);
+          if (asset) {
+            setStatus(`「${name}」已发布（标签 ${tag}），可以下载了。`, 'ok');
+            await loadBigFiles();
+            return;
+          }
+        } catch (e) { /* 还没创建好 */ }
+      }
+      setStatus(`「${name}」还在后台处理，稍后点发布区的「刷新」查看。`, '');
+    }
+
+    async function loadBigFiles() {
+      try {
+        const rels = await api('GET', '/releases?per_page=100');
+        const assets = [];
+        (Array.isArray(rels) ? rels : []).forEach(r => {
+          (r.assets || []).forEach(a => assets.push({
+            id: a.id, name: a.name, size: a.size, url: a.browser_download_url,
+            tag: r.tag_name, created: a.created_at
+          }));
+        });
+        assets.sort((a, b) => String(b.created).localeCompare(String(a.created)));
+        bigAssets = assets;
+        renderBig(bigAssets);
+      } catch (e) {
+        bigListEl.innerHTML = '';
+        const d = document.createElement('div');
+        d.className = 'big-note';
+        d.textContent = '大文件列表暂时加载失败：' + (e.message || e);
+        bigListEl.appendChild(d);
+      }
+    }
+
+    function renderBig(assets) {
+      bigListEl.innerHTML = '';
+      if (!assets.length) {
+        const d = document.createElement('div');
+        d.className = 'big-note';
+        d.textContent = '还没有大文件。';
+        bigListEl.appendChild(d);
+        return;
+      }
+      assets.forEach(a => {
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        const nameCell = document.createElement('div');
+        nameCell.className = 'name';
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = '📦';
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = a.name;
+        const pill = document.createElement('span');
+        pill.className = 'tag-pill';
+        pill.textContent = a.tag;
+        nameCell.append(icon, nm, pill);
+
+        const sizeCell = document.createElement('div');
+        sizeCell.className = 'size';
+        sizeCell.textContent = fmtSize(a.size);
+
+        const actions = document.createElement('div');
+        actions.className = 'row-actions';
+        const link = document.createElement('a');
+        link.className = 'mini';
+        link.href = a.url;
+        link.setAttribute('download', a.name);
+        link.textContent = '下载';
+        actions.appendChild(link);
+        if (unlocked) actions.appendChild(miniBtn('删除', () => deleteBigAsset(a), 'danger'));
+
+        row.append(nameCell, sizeCell, actions);
+        bigListEl.appendChild(row);
+      });
+    }
+
+    async function deleteBigAsset(a) {
+      if (!requireToken()) return;
+      if (!confirm(`确定删除大文件「${a.name}」（标签 ${a.tag}）吗？此操作不可恢复。`)) return;
+      try {
+        await api('DELETE', `/releases/assets/${a.id}`);
+        setStatus('已删除', 'ok');
+        loadBigFiles();
+      } catch (e) { handleErr(e); }
+    }
+
+    $('refreshBig').onclick = loadBigFiles;
 
     async function uploadSingle(target) {
       const file = target.file;
@@ -894,6 +1060,7 @@
     /* ============ 初始化 ============ */
     updateUI();
     loadDir();
+    loadBigFiles();
   </script>
 </body>
 </html>
