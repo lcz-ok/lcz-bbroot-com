@@ -45,5 +45,6 @@ jobs:
           NAME: ${{ inputs.name }}
         run: |
           set -euo pipefail
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --notes "大文件上传"
-          gh release upload "$TAG" "out/${NAME}" --clobber
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TAG" --notes "大文件上传"
+          gh release upload "$TAG" "out/${NAME}" --repo "$GITHUB_REPOSITORY" --clobber
