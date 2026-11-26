@@ -1,0 +1,49 @@
+name: big-upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "文件名"
+        required: true
+      shas:
+        description: "分片 blob SHA，英文逗号分隔，按顺序"
+        required: true
+      tag:
+        description: "发布标签（如 0.0001）"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: 下载分片并合并
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHAS: ${{ inputs.shas }}
+          NAME: ${{ inputs.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          IFS=',' read -ra arr <<< "$SHAS"
+          for sha in "${arr[@]}"; do
+            curl -fsSL \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github.raw" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/blobs/${sha}" >> "out/${NAME}"
+          done
+          ls -l "out/${NAME}"
+          du -h "out/${NAME}"
+      - name: 发布到 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          NAME: ${{ inputs.name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --notes "大文件上传"
+          gh release upload "$TAG" "out/${NAME}" --clobber
